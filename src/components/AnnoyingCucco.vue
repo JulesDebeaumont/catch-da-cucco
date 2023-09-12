@@ -12,7 +12,7 @@ const emits = defineEmits<{
 }>();
 
 // const
-const minimumRunAway = 50;
+const minimumRunAway = 100;
 const cuccoSizeInPx = 70;
 const maxWidth = (window.innerWidth - cuccoSizeInPx) / 2 - minimumRunAway;
 const maxHeight = (window.innerHeight - cuccoSizeInPx) / 2 - minimumRunAway;
@@ -24,24 +24,38 @@ const cojiroPoint = 100;
 const position = ref({ x: 0, y: 0 });
 const isClicked = ref(false);
 const goingLeft = ref(randomBoolean());
+const isRunningAway = ref(false);
 
 // functions
 function runAway() {
   let nextPositionX = generateNewPosition(maxWidth);
+  let tryCount = 0;
   while (
     nextPositionX < position.value.x + minimumRunAway &&
     nextPositionX > position.value.x - minimumRunAway
   ) {
+    tryCount += 1;
     nextPositionX = generateNewPosition(maxWidth);
+    if (tryCount > 5) {
+      break;
+    }
   }
   let nextPositionY = generateNewPosition(maxHeight);
   while (
     nextPositionY < position.value.y + minimumRunAway &&
     nextPositionY > position.value.y - minimumRunAway
   ) {
+    tryCount += 1;
     nextPositionY = generateNewPosition(maxHeight);
+    if (tryCount > 5) {
+      break;
+    }
   }
+  isRunningAway.value = true;
   position.value = { x: nextPositionX, y: nextPositionY };
+  setTimeout(() => {
+    isRunningAway.value = false;
+  }, 800);
 }
 function generateNewPosition(maxValue: number) {
   return (
@@ -60,6 +74,9 @@ function randomBoolean() {
   return Math.random() < 0.5;
 }
 function getCuccoClass() {
+  if (isRunningAway.value === true) {
+    return ' ';
+  }
   if (goingLeft.value === true) {
     const leftClasses = [' annoying-cucco-left-1', ' annoying-cucco-left-2'];
     return leftClasses.at(Math.floor(Math.random() * leftClasses.length));
@@ -84,22 +101,26 @@ onMounted(() => {
 </script>
 
 <template>
-  <div v-if="!isClicked">
+  <div
+    v-if="!isClicked"
+    @mouseover="runAway"
+    @click="addPoint"
+    class="annoying-cucco-container absolute"
+    :style="{
+      transform:
+        'translateX(' + position.x + 'px) translateY(' + position.y + 'px)',
+      width: cuccoSizeInPx + 'px',
+      height: cuccoSizeInPx + 'px',
+    }"
+  >
     <img
-      @mouseover="runAway"
-      @click="addPoint"
+      class="annoying-cucco"
       :class="getCuccoClass()"
+      :src="`images/${getCuccoImage()}`"
       :style="{
-        transform:
-          'translateX(' +
-          position.x +
-          'px) translateY(' +
-          position.y +
-          'px)',
         width: cuccoSizeInPx + 'px',
         height: cuccoSizeInPx + 'px',
       }"
-      :src="`images/${getCuccoImage()}`"
     />
   </div>
 </template>
@@ -347,20 +368,23 @@ onMounted(() => {
     transform: scaleX(-1) translateX(0px) translateY(0px);
   }
 }
-.annoying-cucco-left-1 {
+
+.annoying-cucco-container {
+  transition: all 0.8s;
+}
+.annoying-cucco {
   transition: all 0.2s;
+}
+.annoying-cucco-left-1 {
   animation: cucco-walking-left-1 4s infinite;
 }
 .annoying-cucco-left-2 {
-  transition: all 0.2s;
   animation: cucco-walking-left-2 2s infinite;
 }
 .annoying-cucco-right-1 {
-  transition: all 0.2s;
   animation: cucco-walking-right-1 3.5s infinite;
 }
 .annoying-cucco-right-2 {
-  transition: all 0.2s;
   animation: cucco-walking-right-2 2.5s infinite;
 }
 </style>
